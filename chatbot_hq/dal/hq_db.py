@@ -88,6 +88,73 @@ class CoCompany(BaseModel):
         db_table = 'co_company'
 
 
+class CoIdxDefFinan(BaseModel):
+    id = CharField(null=True)
+    entity_id = CharField(null=True)
+    default_name = CharField(null=True)
+    update_at = DateTimeField(null=True)
+    create_at = DateTimeField(null=True)
+    sema_etl_at = DateTimeField(null=True)
+    is_delete = CharField(null=True)
+
+    name_cn = CharField(null=True)
+    name_cn_s = CharField(null=True)
+    name_en = CharField(null=True)
+    name_en_s = CharField(null=True)
+
+    class Meta:
+        db_table = 'co_idx_def_finan'
+
+
+class CoIdxDefOp(BaseModel):
+    id = CharField(null=True)
+    entity_id = CharField(null=True)
+    default_name = CharField(null=True)
+    update_at = DateTimeField(null=True)
+    create_at = DateTimeField(null=True)
+    sema_etl_at = DateTimeField(null=True)
+    is_delete = CharField(null=True)
+
+    name_cn = CharField(null=True)
+    name_cn_s = CharField(null=True)
+    name_en = CharField(null=True)
+    name_en_s = CharField(null=True)
+
+    class Meta:
+        db_table = 'co_idx_def_op'
+
+
+class CoMajorProd(BaseModel):
+    id = CharField(null=True)
+    entity_id = CharField(null=True)
+    default_name = CharField(null=True)
+    update_at = DateTimeField(null=True)
+    create_at = DateTimeField(null=True)
+    sema_etl_at = DateTimeField(null=True)
+    is_delete = CharField(null=True)
+
+    name_en = CharField(null=True)
+
+    class Meta:
+        db_table = 'co_major_prod'
+
+
+class PeoPeople(BaseModel):
+    id = CharField(null=True)
+    entity_id = CharField(null=True)
+    default_name = CharField(null=True)
+    update_at = DateTimeField(null=True)
+    create_at = DateTimeField(null=True)
+    sema_etl_at = DateTimeField(null=True)
+    is_delete = CharField(null=True)
+
+    name_en = CharField(null=True)
+    name_cn = CharField(null=True)
+
+    class Meta:
+        db_table = 'peo_people'
+
+
 class EavInsAlias(BaseModel):
     id = CharField(null=True)
     entity_id = CharField(null=True)

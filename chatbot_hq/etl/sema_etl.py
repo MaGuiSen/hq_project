@@ -32,7 +32,7 @@ base_params = {
         u'table': CoCompany,
     },
     u'obj.idx.co.op.def': {
-         u'sema_entity_id': u'entity.org.co.company',
+        u'sema_entity_id': u'entity.org.co.company',
         u'domain_id': u'domain.org.co.company',
         u'sema_name_pattern': u'co.company.%s',
         u'table': CoCompany,
@@ -52,18 +52,37 @@ base_params = {
 }
 
 
+# 定时补
+def sema_etl_timing_execute():
+    # 补所有
+    pass
+    for biz_entity_id in base_params:
+        entity_config = base_params.get(biz_entity_id)
+
+        sema_entity_id = entity_config.get(u'sema_entity_id', u'')
+        domain_id = entity_config.get(u'domain_id', u'')
+        sema_name_pattern = entity_config.get(u'sema_name_pattern', u'')
+        table = entity_config.get(u'table', u'')
+
+        sql_str = u'entity_id="%s" and (sema_etl_at is null or sema_etl_at<create_at or sema_etl_at<update_at)' % biz_entity_id
+        mq_result = table.select().where(SQL(sql_str))
+        # 分页查询
+        for result_item in mq_result:
+            pass
+
+
 # TODO..错误的返回
 def sema_etl_execute(biz_entity_id, biz_id):
-    entity = base_params.get(biz_entity_id)
+    entity_config = base_params.get(biz_entity_id)
 
-    if not entity:
-        print u'根据biz_entity_id找不到实体类型'
+    if not entity_config:
+        print u'根据biz_entity_id找不到实体类型配置'
         return
 
-    sema_entity_id = entity.get(u'sema_entity_id', u'')
-    domain_id = entity.get(u'domain_id', u'')
-    sema_name_pattern = entity.get(u'sema_name_pattern', u'')
-    table = entity.get(u'table', u'')
+    sema_entity_id = entity_config.get(u'sema_entity_id', u'')
+    domain_id = entity_config.get(u'domain_id', u'')
+    sema_name_pattern = entity_config.get(u'sema_name_pattern', u'')
+    table = entity_config.get(u'table', u'')
 
     if not domain_id:
         print u'未找到domain_id'
@@ -84,27 +103,32 @@ def sema_etl_execute(biz_entity_id, biz_id):
 
     mq_result = mq_result[0]
 
-    # 判断是否需要更新，从时间上判断
-    mq_create_at = mq_result.create_at
-    mq_update_at = mq_result.update_at
-    sema_etl_at = mq_result.sema_etl_at
-
-    if sema_etl_at and (sema_etl_at >= mq_create_at and sema_etl_at >= mq_update_at):
-        # 不需要更新
-        return
+    # 好像不需要
+    # # 判断是否需要更新，从时间上判断
+    # mq_create_at = mq_result.create_at
+    # mq_update_at = mq_result.update_at
+    # sema_etl_at = mq_result.sema_etl_at
+    #
+    # if sema_etl_at and (sema_etl_at >= mq_create_at and sema_etl_at >= mq_update_at):
+    #     # 不需要更新
+    #     return
 
     phrase_list = []
 
     mq_id = mq_result.id
-    name = mq_result.default_name
 
-    # TODO...给数据库添加对应字段
+    name = mq_result.default_name if hasattr(mq_result, 'default_name') else ''
+    name_cn = mq_result.name_cn if hasattr(mq_result, 'name_cn') else ''
+    name_cn_s = mq_result.name_cn_s if hasattr(mq_result, 'name_cn_s') else ''
+    name_en = mq_result.name_en if hasattr(mq_result, 'name_en') else ''
+    name_en_s = mq_result.name_en_s if hasattr(mq_result, 'name_en_s') else ''
+
     name_list = [
         name,
-        mq_result.name_cn,
-        mq_result.name_cn_s,
-        mq_result.name_en,
-        mq_result.name_en_s
+        name_cn,
+        name_cn_s,
+        name_en,
+        name_en_s
     ]
 
     # 从alias库获取别名
@@ -131,6 +155,7 @@ def sema_etl_execute(biz_entity_id, biz_id):
 
     if semantic:
         semantic = semantic[0]
+        sema_id = semantic._id
         # 存在了，就更新
         semantic.detail = detail
         semantic.create_by = 0
@@ -146,13 +171,16 @@ def sema_etl_execute(biz_entity_id, biz_id):
                             create_by=0,
                             detail=detail
                             )
-        # 更新实体 TODO..如果失败了，可能导致下一次，没办法关联
+    semantic.save()
+
+    # 实体更新，先判断关联是否存在，不存在则需要添加，目的是防止一次更新失败之后不能正常更新关联关系
+    entity = Entity.objects(_id=sema_entity_id, semantics=sema_id)
+    if not entity:
         entity = Entity.objects(_id=sema_entity_id)
         if entity:
             entity = entity[0]
             entity.semantics.append(sema_id)
             entity.save()
-    semantic.save()
 
     # 更新sema_etl时间
     table.update(sema_etl_at=datetime.now()).where(table.id == biz_id).execute()
@@ -160,4 +188,9 @@ def sema_etl_execute(biz_entity_id, biz_id):
 
 if __name__ == '__main__':
     print u'导入语义数据'
-    sema_etl_execute(u'obj.org.co.company', u'00005.obj.org.co.company.')
+    # sema_etl_execute(u'obj.org.co.company', u'000001.obj.org.co.company.')
+    table = CoCompany
+    biz_entity_id = u'obj.org.co.company'
+    sql_str = u'entity_id="%s" and (sema_etl_at is null or sema_etl_at<create_at or sema_etl_at<update_at)' % biz_entity_id
+    mq_result = table.select().where(SQL(sql_str))
+    print mq_result

@@ -112,7 +112,8 @@ def sema_etl_timing_execute():
                     save_log(u'%s 结束循环，最后一页：%s' % (biz_entity_id, page_index))
                     break
                 page_index += 1
-
+                save_log(u'\n')
+        save_log(u'\n')
         save_log(u'开始%s的循环遍历' % biz_entity_id)
         page_run(page_operate)
 
@@ -127,7 +128,6 @@ def save_log(log):
     log = log.encode('utf8')
     with open('operate.txt', 'a') as loadF:
         loadF.write(log)
-        loadF.write('\n')
         loadF.close()
 
 

@@ -40,7 +40,7 @@ base_params = {
     u'obj.org.co.company': {
         u'sema_entity_id': u'entity.org.co.company',
         u'domain_id': u'domain.org.co.company',
-        u'sema_name_pattern': u'co.company.%s',
+        u'sema_name_pattern': u'co_company.%s',
         u'table': CoCompany,
     },
     u'obj.peo.people': {
@@ -54,7 +54,28 @@ base_params = {
 
 def sema_delete(biz_entity_id, biz_id):
     # 找到语义删除，同时删除关联
-    pass
+    entity_config = base_params.get(biz_entity_id)
+    sema_entity_id = entity_config.get(u'sema_entity_id', u'')
+
+    semantic = Semantic.objects(
+        __raw__={u"$and": [{u"detail.biz_entity_id": biz_entity_id}, {u"detail.biz_id": biz_id}]})
+    if semantic:
+        semantic = semantic[0]
+        sema_id = semantic._id
+        # 删除操作
+        semantic.delete()
+        save_log(u'删除语义')
+        # 找下关联关系
+        entity = Entity.objects(_id=sema_entity_id, semantics=sema_id)
+        if entity:
+            save_log(u'删除实体语义关联')
+            entity = entity[0]
+            entity.semantics.remove(sema_id)
+            entity.save()
+        # TODO..测试看是否需要更新etl时间
+        return back_info(200, u'删除成功')
+    else:
+        return back_info(500, u'未找到相关语义数据')
 
 
 # 定时补
@@ -67,12 +88,13 @@ def sema_etl_timing_execute():
         sema_name_pattern = entity_config.get(u'sema_name_pattern', u'')
         table = entity_config.get(u'table', u'')
 
-        sql_str = u'entity_id="%s" and (sema_etl_at is null or sema_etl_at<create_at or sema_etl_at<update_at)' % biz_entity_id
+        sql_str = (u'entity_id="%s" and (sema_etl_at is null or sema_etl_at<create_at or sema_etl_at<update_at) '
+                   u'and (is_delete="0" or is_delete is null)') % biz_entity_id
         pw_loggger.info(sql_str)
 
         # 分页操作
         def page_operate():
-            mq_result_all = table.select().where(SQL(sql_str)).paginate(1, 15)
+            mq_result_all = table.select().where(SQL(sql_str)).paginate(1, 1000)
             if not mq_result_all:
                 # 结束循环
                 return True
@@ -95,9 +117,9 @@ def sema_etl_timing_execute():
         page_run(page_operate)
 
 
-def back_info(status, status_msg):
-    save_log(u'code %s， msg：%s' % (status, status_msg))
-    return status, status_msg
+def back_info(code, msg):
+    save_log(u'code %s， msg：%s' % (code, msg))
+    return code, msg
 
 
 def save_log(log):
@@ -130,7 +152,8 @@ def sema_etl_execute(biz_entity_id, biz_id):
         return back_info(500, u'未找到sema_entity_id')
 
     # biz_entity_id、biz_id: mysql数据库的entity_id、id
-    mq_result = table.select().where(table.entity_id == biz_entity_id, table.id == biz_id)
+    sql_str = u'entity_id="%s" and id="%s" and (is_delete="0" or is_delete is null)' % (biz_entity_id, biz_id)
+    mq_result = table.select().where(SQL(sql_str))
     if not mq_result:
         return back_info(500, u'未找到相关数据')
 
@@ -186,7 +209,6 @@ def base_execute(table, mq_result, biz_entity_id, biz_id, domain_id, sema_name_p
         u"phrase_list": phrase_list,
         u"biz_entity_id": biz_entity_id,
         u"biz_id": biz_id,
-        u"name": name,
     }
 
     semantic = Semantic.objects(
@@ -199,6 +221,7 @@ def base_execute(table, mq_result, biz_entity_id, biz_id, domain_id, sema_name_p
         # 存在了，就更新
         semantic.detail = detail
         semantic.create_by = 0
+        semantic.name = sema_name_pattern % name
     else:
         # 不存在，则新增
         sema_id = gen_unicode_id()
@@ -219,7 +242,7 @@ def base_execute(table, mq_result, biz_entity_id, biz_id, domain_id, sema_name_p
     if not entity:
         entity = Entity.objects(_id=sema_entity_id)
         if entity:
-            save_log(u'新增主体语义关联')
+            save_log(u'新增实体语义关联')
             entity = entity[0]
             entity.semantics.append(sema_id)
             entity.save()
@@ -230,6 +253,8 @@ def base_execute(table, mq_result, biz_entity_id, biz_id, domain_id, sema_name_p
     save_log(u'\n')
 
 
+# 171205142303365tItYVf8SuX
 if __name__ == '__main__':
     # code, msg = sema_etl_execute(u'obj.org.co.company', u'000001.obj.org.co.company.')
     sema_etl_timing_execute()
+    # sema_delete(u'obj.org.co.company', u'000001.obj.org.co.company.')

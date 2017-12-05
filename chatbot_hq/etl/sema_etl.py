@@ -52,6 +52,21 @@ base_params = {
 }
 
 
+def back_info(code, msg):
+    save_log(u'code %s， msg：%s' % (code, msg))
+    return code, msg
+
+
+def save_log(log):
+    pw_loggger.info(log)
+    if True:
+        return
+    log = log.encode('utf8')
+    with open('operate.txt', 'a') as loadF:
+        loadF.write(log)
+        loadF.close()
+
+
 def sema_delete(biz_entity_id, biz_id):
     # 找到语义删除，同时删除关联
     entity_config = base_params.get(biz_entity_id)
@@ -113,22 +128,10 @@ def sema_etl_timing_execute():
                     break
                 page_index += 1
                 save_log(u'\n')
+
         save_log(u'\n')
         save_log(u'开始%s的循环遍历' % biz_entity_id)
         page_run(page_operate)
-
-
-def back_info(code, msg):
-    save_log(u'code %s， msg：%s' % (code, msg))
-    return code, msg
-
-
-def save_log(log):
-    pw_loggger.info(log)
-    log = log.encode('utf8')
-    with open('operate.txt', 'a') as loadF:
-        loadF.write(log)
-        loadF.close()
 
 
 def sema_etl_execute(biz_entity_id, biz_id):
@@ -151,7 +154,6 @@ def sema_etl_execute(biz_entity_id, biz_id):
     if not sema_entity_id:
         return back_info(500, u'未找到sema_entity_id')
 
-    # biz_entity_id、biz_id: mysql数据库的entity_id、id
     sql_str = u'entity_id="%s" and id="%s" and (is_delete="0" or is_delete is null)' % (biz_entity_id, biz_id)
     mq_result = table.select().where(SQL(sql_str))
     if not mq_result:
@@ -217,11 +219,11 @@ def base_execute(table, mq_result, biz_entity_id, biz_id, domain_id, sema_name_p
     if semantic:
         semantic = semantic[0]
         sema_id = semantic._id
-        save_log(u'存在并更新语义，语义id为sema_id：%s' % sema_id)
         # 存在了，就更新
         semantic.detail = detail
         semantic.create_by = 0
         semantic.name = sema_name_pattern % name
+        save_log(u'存在并更新语义，语义id为sema_id：%s' % sema_id)
     else:
         # 不存在，则新增
         sema_id = gen_unicode_id()
@@ -253,7 +255,6 @@ def base_execute(table, mq_result, biz_entity_id, biz_id, domain_id, sema_name_p
     save_log(u'\n')
 
 
-# 171205142303365tItYVf8SuX
 if __name__ == '__main__':
     # code, msg = sema_etl_execute(u'obj.org.co.company', u'000001.obj.org.co.company.')
     sema_etl_timing_execute()

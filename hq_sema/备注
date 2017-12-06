@@ -1,0 +1,9 @@
+1、sema新增、修改接口 GET（ip待定）
+http://localhost:10011/sema/etl?biz_entity_id=111&biz_id=222
+
+2、sema删除接口 GET（ip待定）
+http://localhost:10011/sema/delete?biz_entity_id=111&biz_id=222
+
+注释：
+biz_entity_id：为数据库表中的entity_id
+biz_id:为数据库表中的id

@@ -38,7 +38,7 @@ def base_func(operate_func):
         print msg
     res_text = construct_response(code, msg)
     _logger.debug(res_text)
-    return res_text
+    return res_text  # Response(res_text, mimetype='applications/json')
 
 
 # http://localhost:10011/sema/etl?biz_entity_id=111&biz_id=222

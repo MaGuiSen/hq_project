@@ -18,7 +18,7 @@ def start():
                           next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=delaySeconds),
                           start_date=datetime.datetime.now() + datetime.timedelta(seconds=timeSpace), max_instances=1)
 
-    timeSpace = 60 * 60
+    timeSpace = 2 * 60 * 60
     scheduler = BlockingScheduler(daemonic=False)
 
     add_job(sema_etl_timing_execute, timeSpace)

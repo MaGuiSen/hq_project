@@ -67,6 +67,7 @@ def save_log(log):
         loadF.close()
 
 
+# 删除
 def sema_delete(biz_entity_id, biz_id):
     # 找到语义删除，同时删除关联
     entity_config = base_params.get(biz_entity_id)
@@ -134,6 +135,7 @@ def sema_etl_timing_execute():
         page_run(page_operate)
 
 
+# 新增，更新
 def sema_etl_execute(biz_entity_id, biz_id):
     entity_config = base_params.get(biz_entity_id)
 

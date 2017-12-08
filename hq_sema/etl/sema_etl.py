@@ -164,12 +164,12 @@ def sema_etl_execute(biz_entity_id, biz_id):
     mq_result = mq_result[0]
 
     # 判断是否需要更新，从时间上判断
-    mq_create_at = mq_result.create_at
-    mq_update_at = mq_result.update_at
-    sema_etl_at = mq_result.sema_etl_at
-
-    if sema_etl_at and (sema_etl_at >= mq_create_at and sema_etl_at >= mq_update_at):
-        return back_info(200, u'已经更新到最新')
+    # mq_create_at = mq_result.create_at
+    # mq_update_at = mq_result.update_at
+    # sema_etl_at = mq_result.sema_etl_at
+    #
+    # if sema_etl_at and (sema_etl_at >= mq_create_at and sema_etl_at >= mq_update_at):
+    #     return back_info(200, u'已经更新到最新')
 
     base_execute(table, mq_result, biz_entity_id, biz_id, domain_id, sema_name_pattern, sema_entity_id)
 
